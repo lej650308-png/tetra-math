@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🔺 정사면체 놀이수학</title>
+<meta name="description" content="초등 고학년을 위한 인터랙티브 놀이수학 — 정사면체를 돌려보고, 전개도를 접고, 퀴즈를 풀고, 직접 만들고, 시어핀스키 피라미드까지 확장해요.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="🔺 정사면체 놀이수학">
+<meta property="og:description" content="돌려보기·전개도·퀴즈·만들기·확장하기(시어핀스키 피라미드) — 초등 고학년 인터랙티브 학습 자료">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23eef4ff'/%3E%3Cpolygon points='32,10 54,50 10,50' fill='none' stroke='%232b2350' stroke-width='4' stroke-linejoin='round'/%3E%3Cpolygon points='32,10 43,30 21,30' fill='%235b8def'/%3E%3Cpolygon points='21,30 43,30 32,50' fill='%23ffcf3f'/%3E%3Cpolygon points='10,50 21,30 32,50' fill='%23ff7aa2'/%3E%3Cpolygon points='32,50 43,30 54,50' fill='%234fd1a5'/%3E%3C/svg%3E">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@400;700;900&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root{
+    --c1:#5b8def; --c2:#ff7aa2; --c3:#ffcf3f; --c4:#4fd1a5; --c5:#a06bff;
+    --ink:#2b2350; --paper:#fffdf7;
+  }
+  body{
+    min-height:100vh;
+    font-family:'Noto Sans KR',sans-serif;
+    color:var(--ink);
+    background:
+      radial-gradient(1200px 600px at 10% -10%, #d5e6ff 0%, transparent 60%),
+      radial-gradient(1000px 500px at 110% 10%, #ffe0ec 0%, transparent 55%),
+      linear-gradient(160deg,#eef4ff 0%,#fdf0f6 45%,#fff8e8 100%);
+    overflow-x:hidden;
+  }
+  .float{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden;}
+  .float span{position:absolute;font-size:26px;opacity:.35;animation:drift linear infinite;}
+  @keyframes drift{
+    0%{transform:translateY(110vh) rotate(0deg);}
+    100%{transform:translateY(-20vh) rotate(360deg);}
+  }
+
+  #app{position:relative;z-index:10;max-width:920px;margin:0 auto;padding:22px 16px 60px;}
+
+  header{text-align:center;margin-bottom:18px;}
+  header h1{
+    font-family:'Jua',sans-serif;font-size:2.4rem;line-height:1.2;
+    color:var(--ink);letter-spacing:1px;
+    text-shadow:2px 3px 0 #fff, 4px 6px 0 rgba(91,141,239,.18);
+  }
+  header p{margin-top:6px;color:#6a6790;font-weight:700;font-size:1rem;}
+
+  /* 탭 */
+  .tabs{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:18px 0 22px;}
+  .tab{
+    font-family:'Jua',sans-serif;font-size:1rem;
+    border:none;cursor:pointer;color:#fff;
+    padding:12px 18px;border-radius:16px;
+    box-shadow:0 6px 0 rgba(0,0,0,.12), 0 8px 18px rgba(0,0,0,.12);
+    transition:transform .12s, filter .12s, box-shadow .12s;
+    filter:grayscale(.25) brightness(.98);
+  }
+  .tab:active{transform:translateY(3px);box-shadow:0 3px 0 rgba(0,0,0,.12);}
+  .tab.on{filter:none;transform:translateY(-2px) scale(1.04);}
+  .tab[data-c="1"]{background:var(--c1);}
+  .tab[data-c="2"]{background:var(--c2);}
+  .tab[data-c="3"]{background:var(--c3);color:#5a4a00;}
+  .tab[data-c="4"]{background:var(--c4);}
+  .tab[data-c="5"]{background:var(--c5);}
+
+  .panel{display:none;animation:pop .35s ease;}
+  .panel.on{display:block;}
+  @keyframes pop{from{opacity:0;transform:translateY(10px) scale(.98);}to{opacity:1;transform:none;}}
+
+  .card{
+    background:var(--paper);
+    border:2px solid #fff;
+    border-radius:24px;
+    box-shadow:0 12px 30px rgba(70,80,140,.14), inset 0 0 0 6px rgba(255,255,255,.6);
+    padding:22px;margin-bottom:18px;
+  }
+  .card h2{font-family:'Jua',sans-serif;font-size:1.4rem;margin-bottom:6px;display:flex;align-items:center;gap:8px;}
+  .card .lead{color:#6a6790;font-weight:700;margin-bottom:14px;font-size:.98rem;}
+
+  canvas.stage{width:100%;height:360px;display:block;border-radius:18px;
+    background:linear-gradient(180deg,#f3f7ff,#eef1ff);cursor:grab;touch-action:none;}
+  canvas.stage:active{cursor:grabbing;}
+
+  .btnrow{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;justify-content:center;}
+  .pill{
+    font-family:'Jua',sans-serif;font-size:1rem;border:none;cursor:pointer;
+    padding:11px 16px;border-radius:14px;color:#fff;
+    box-shadow:0 5px 0 rgba(0,0,0,.12);transition:transform .1s;
+  }
+  .pill:active{transform:translateY(3px);box-shadow:0 2px 0 rgba(0,0,0,.12);}
+  .pill.b1{background:var(--c1);} .pill.b2{background:var(--c2);}
+  .pill.b3{background:var(--c3);color:#5a4a00;} .pill.b4{background:var(--c4);}
+  .pill.b5{background:var(--c5);}
+  .pill.on{outline:3px solid #fff;box-shadow:0 5px 0 rgba(0,0,0,.18),0 0 0 6px rgba(160,107,255,.3);}
+  .pill.ghost{background:#eceafb;color:#5b57a0;box-shadow:0 5px 0 #d8d4f2;}
+
+  .factbar{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:14px;}
+  .fact{background:#f3f1ff;border-radius:16px;padding:12px 16px;text-align:center;min-width:96px;
+    border:2px dashed #d9d3ff;}
+  .fact b{display:block;font-family:'Jua',sans-serif;font-size:1.7rem;color:var(--c1);}
+  .fact span{font-size:.85rem;color:#6a6790;font-weight:700;}
+  .fact.f2 b{color:var(--c2);} .fact.f3 b{color:#e0a500;} .fact.f4 b{color:var(--c4);}
+
+  .hint{margin-top:12px;background:#fff7dd;border-left:6px solid var(--c3);
+    padding:10px 14px;border-radius:10px;color:#6a5a20;font-weight:700;font-size:.92rem;}
+
+  /* 규칙 타일 (눌러서 확인) */
+  #ruleFact{cursor:pointer;user-select:none;transition:transform .1s,box-shadow .15s;}
+  #ruleFact:hover{transform:translateY(-2px);box-shadow:0 5px 14px rgba(224,165,0,.2);}
+  #ruleFact:active{transform:translateY(1px);}
+  #ruleFact.shown{border-style:solid;background:#fff6db;}
+
+  /* 전개도 고르기 */
+  .netgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-top:8px;}
+  .netpick{background:#f7f8ff;border:3px solid #e6e8ff;border-radius:18px;padding:10px;cursor:pointer;
+    text-align:center;transition:transform .1s, border-color .15s;}
+  .netpick:hover{transform:translateY(-3px);}
+  .netpick svg{width:100%;height:96px;}
+  .netpick.ok{border-color:var(--c4);background:#e9fbf3;}
+  .netpick.no{border-color:var(--c2);background:#ffeef3;}
+  .netpick .lab{font-family:'Jua',sans-serif;margin-top:4px;color:#6a6790;}
+
+  /* 슬라이더 */
+  .slabel{display:flex;justify-content:space-between;font-weight:700;color:#6a6790;font-size:.9rem;margin:14px 4px 4px;}
+  input[type=range]{width:100%;height:10px;border-radius:8px;appearance:none;
+    background:linear-gradient(90deg,var(--c2),var(--c4));outline:none;}
+  input[type=range]::-webkit-slider-thumb{appearance:none;width:26px;height:26px;border-radius:50%;
+    background:#fff;border:4px solid var(--c1);cursor:pointer;box-shadow:0 3px 8px rgba(0,0,0,.2);}
+
+  /* 퀴즈 */
+  #qwrap .qnum{font-family:'Jua',sans-serif;color:var(--c1);font-size:1rem;}
+  #qtext{font-family:'Jua',sans-serif;font-size:1.25rem;margin:6px 0 16px;}
+  .opts{display:grid;gap:10px;}
+  .opt{background:#f7f8ff;border:3px solid #e6e8ff;border-radius:16px;padding:14px 16px;cursor:pointer;
+    font-weight:700;text-align:left;transition:transform .1s, border-color .15s, background .15s;font-size:1rem;color:var(--ink);}
+  .opt:hover{transform:translateY(-2px);}
+  .opt.correct{border-color:var(--c4);background:#e9fbf3;}
+  .opt.wrong{border-color:var(--c2);background:#ffeef3;}
+  .opt:disabled{cursor:default;}
+  #qfeed{margin-top:14px;font-family:'Jua',sans-serif;font-size:1.1rem;text-align:center;min-height:28px;}
+  .scorebar{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+  .scorebar .sc{font-family:'Jua',sans-serif;font-size:1.1rem;color:var(--c2);}
+  .progress{height:12px;background:#eceafb;border-radius:8px;overflow:hidden;margin:8px 0 4px;}
+  .progress i{display:block;height:100%;background:linear-gradient(90deg,var(--c1),var(--c4));width:0;transition:width .3s;}
+
+  /* 만들기 */
+  .steps{display:grid;gap:12px;}
+  .step{display:flex;gap:14px;align-items:flex-start;background:#f7f8ff;border-radius:16px;padding:14px;}
+  .step .n{flex:none;width:40px;height:40px;border-radius:12px;background:var(--c1);color:#fff;
+    font-family:'Jua',sans-serif;font-size:1.3rem;display:grid;place-items:center;box-shadow:0 4px 0 rgba(0,0,0,.12);}
+  .step:nth-child(2) .n{background:var(--c2);} .step:nth-child(3) .n{background:var(--c3);color:#5a4a00;}
+  .step:nth-child(4) .n{background:var(--c4);}
+  .step p{font-weight:700;color:#4a4770;line-height:1.5;padding-top:4px;}
+  .reveal{margin-top:6px;}
+  .reveal .ans{display:none;margin-top:8px;background:#fff7dd;border-radius:10px;padding:10px 12px;color:#6a5a20;font-weight:700;}
+  .reveal.open .ans{display:block;}
+
+  footer{text-align:center;color:#8a86ad;font-weight:700;font-size:.85rem;margin-top:10px;}
+  @media(max-width:520px){header h1{font-size:1.9rem;} canvas.stage{height:300px;}}
+</style>
+</head>
+<body>
+<div class="float" id="float"></div>
+<div id="app">
+  <header>
+    <h1>🔺 정사면체 놀이수학</h1>
+    <p>돌려보고, 접어보고, 풀어보고, 만들어 보자!</p>
+  </header>
+
+  <div class="tabs">
+    <button class="tab on" data-c="1" data-tab="observe">🔄 돌려보기</button>
+    <button class="tab" data-c="2" data-tab="net">📐 전개도</button>
+    <button class="tab" data-c="3" data-tab="quiz">❓ 퀴즈</button>
+    <button class="tab" data-c="4" data-tab="make">✂️ 만들기</button>
+    <button class="tab" data-c="5" data-tab="expand">🚀 확장하기</button>
+  </div>
+
+  <!-- 1. 돌려보기 -->
+  <section class="panel on" id="observe">
+    <div class="card">
+      <h2>🔄 정사면체를 빙글빙글 돌려보자</h2>
+      <p class="lead">마우스로 드래그(휴대폰은 손가락으로 밀기)하면 이리저리 돌릴 수 있어요. 아래 버튼을 눌러 면·모서리·꼭짓점을 찾아보세요!</p>
+      <canvas class="stage" id="cv1"></canvas>
+      <div class="btnrow">
+        <button class="pill b1" data-show="face">면 4개 🔦</button>
+        <button class="pill b2" data-show="edge">모서리 6개 🔦</button>
+        <button class="pill b3" data-show="vertex">꼭짓점 4개 🔦</button>
+        <button class="pill ghost" data-show="reset">처음으로</button>
+        <button class="pill b4" id="spinBtn">자동회전 ▶</button>
+      </div>
+      <div class="factbar">
+        <div class="fact"><b>4</b><span>면(정삼각형)</span></div>
+        <div class="fact f2"><b>6</b><span>모서리</span></div>
+        <div class="fact f3"><b>4</b><span>꼭짓점</span></div>
+        <div class="fact f4"><b>3</b><span>한 꼭짓점에<br>모이는 면</span></div>
+      </div>
+      <div class="hint">💡 면 + 꼭짓점 − 모서리 = 4 + 4 − 6 = <b>2</b> ! 모든 다면체에서 항상 2가 되는 신기한 규칙이에요 (오일러의 공식).</div>
+    </div>
+  </section>
+
+  <!-- 2. 전개도 -->
+  <section class="panel" id="net">
+    <div class="card">
+      <h2>📐 전개도를 접으면 정사면체!</h2>
+      <p class="lead">슬라이더를 움직여 납작한 전개도가 정사면체로 접히는 모습을 살펴보세요.</p>
+      <canvas class="stage" id="cv2"></canvas>
+      <div class="slabel"><span>펼치기 (전개도)</span><span>접기 (정사면체)</span></div>
+      <input type="range" id="foldRange" min="0" max="100" value="0">
+      <div class="btnrow">
+        <button class="pill b4" id="autoFold">천천히 접기 🎬</button>
+      </div>
+      <div class="hint">💡 정삼각형 4개로 이루어진 전개도예요. 가운데 삼각형에 세 개의 삼각형이 붙어 있고, 접으면 세 꼭짓점이 위에서 딱 만나요!</div>
+    </div>
+    <div class="card">
+      <h2>🕵️ 어느 것이 정사면체 전개도일까?</h2>
+      <p class="lead">아래 4개 중 접었을 때 정사면체가 되는 전개도를 골라보세요.</p>
+      <div class="netgrid" id="netgrid"></div>
+      <div id="netfeed" style="text-align:center;font-family:'Jua',sans-serif;font-size:1.1rem;margin-top:12px;min-height:26px;"></div>
+    </div>
+  </section>
+
+  <!-- 3. 퀴즈 -->
+  <section class="panel" id="quiz">
+    <div class="card" id="qwrap">
+      <div class="scorebar">
+        <span class="qnum" id="qnum">1 / 6</span>
+        <span class="sc" id="score">⭐ 0점</span>
+      </div>
+      <div class="progress"><i id="qbar"></i></div>
+      <div id="qtext">문제를 불러오는 중...</div>
+      <div class="opts" id="qopts"></div>
+      <div id="qfeed"></div>
+      <div class="btnrow" id="qnav" style="display:none;">
+        <button class="pill b1" id="nextBtn">다음 문제 ➡</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. 만들기 -->
+  <section class="panel" id="make">
+    <div class="card">
+      <h2>📐 오려서 접는 전개도</h2>
+      <p class="lead">삼각형 4개가 겹치지 않게 평면으로 펼친 모습이에요. 종이에 그대로 그려 <b>바깥 굵은 선</b>을 가위로 오리고, <b>안쪽 점선</b>을 접으면 정사면체가 완성돼요!</p>
+      <div style="text-align:center;">
+        <svg viewBox="0 0 360 330" style="width:100%;max-width:360px;">
+          <!-- 네 개의 정삼각형 면 (겹치지 않음) -->
+          <polygon points="180,58 110,179 250,179" fill="#dbe8ff"/>
+          <polygon points="40,300 180,300 110,179" fill="#ffe0ec"/>
+          <polygon points="320,300 250,179 180,300" fill="#dcf5ec"/>
+          <polygon points="110,179 250,179 180,300" fill="#fff2c9"/>
+          <!-- 접는 선 (점선) -->
+          <g stroke="#5b8def" stroke-width="2.5" stroke-dasharray="8 6" stroke-linecap="round">
+            <line x1="110" y1="179" x2="250" y2="179"/>
+            <line x1="250" y1="179" x2="180" y2="300"/>
+            <line x1="180" y1="300" x2="110" y2="179"/>
+          </g>
+          <!-- 자르는 선 (바깥 굵은 실선) -->
+          <polygon points="180,58 320,300 40,300" fill="none" stroke="#2b2350" stroke-width="4" stroke-linejoin="round"/>
+          <!-- 꼭짓점 -->
+          <g fill="#2b2350">
+            <circle cx="180" cy="58" r="4"/><circle cx="40" cy="300" r="4"/><circle cx="320" cy="300" r="4"/>
+          </g>
+          <!-- 라벨 -->
+          <g font-family="Jua, sans-serif" font-size="17" fill="#4a4770" text-anchor="middle">
+            <text x="180" y="140">면 ①</text>
+            <text x="110" y="258">면 ②</text>
+            <text x="250" y="258">면 ③</text>
+            <text x="180" y="228">바닥</text>
+          </g>
+        </svg>
+      </div>
+      <div class="btnrow" style="gap:20px;">
+        <span style="font-weight:700;color:#5b57a0;display:inline-flex;align-items:center;gap:7px;">
+          <svg width="34" height="10"><line x1="1" y1="5" x2="33" y2="5" stroke="#2b2350" stroke-width="4"/></svg>자르는 선</span>
+        <span style="font-weight:700;color:#5b57a0;display:inline-flex;align-items:center;gap:7px;">
+          <svg width="34" height="10"><line x1="1" y1="5" x2="33" y2="5" stroke="#5b8def" stroke-width="3" stroke-dasharray="7 5"/></svg>접는 선</span>
+      </div>
+      <div class="hint">💡 모든 변의 길이는 같게(예: 8cm), 모든 각은 60°! 바깥 세 변에 작은 풀칠 날개를 덧붙이면 조립이 더 쉬워요.</div>
+    </div>
+    <div class="card">
+      <h2>✂️ 내 손으로 정사면체 만들기</h2>
+      <p class="lead">집이나 교실에 있는 재료로 정사면체를 만들어 보세요. 두 가지 방법을 알려줄게요!</p>
+      <div class="steps">
+        <div class="step"><div class="n">1</div><p><b>종이 방법 ①</b> — 정삼각형 4개짜리 전개도를 그려서 오려요. 각 변의 길이는 똑같이 (예: 6cm), 세 각은 모두 60°!</p></div>
+        <div class="step"><div class="n">2</div><p><b>종이 방법 ②</b> — 접는 선을 자로 살짝 눌러 접고, 가장자리에 풀칠 날개를 붙여 삼각뿔 모양으로 접착해요.</p></div>
+        <div class="step"><div class="n">3</div><p><b>빨대 방법</b> — 같은 길이 빨대 6개와 점토(또는 젤리) 4개를 준비해요. 점토가 <b>꼭짓점</b>, 빨대가 <b>모서리</b>가 돼요.</p></div>
+        <div class="step"><div class="n">4</div><p><b>완성!</b> — 아래 바닥에 삼각형 하나, 그 위 꼭짓점 하나. 어느 면을 바닥에 놓아도 똑같은 모양이랍니다. 정말 튼튼하죠?</p></div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>🔎 탐구 미션 (눌러서 정답 확인)</h2>
+      <p class="lead">직접 만든 정사면체를 들고 세어 보고, 버튼을 눌러 답을 맞혀보세요.</p>
+      <div class="steps" id="missions"></div>
+    </div>
+    <div class="card">
+      <h2>📊 다른 정다면체와 비교</h2>
+      <p class="lead">정사면체는 가장 적은 면으로 만든 정다면체예요!</p>
+      <div class="factbar">
+        <div class="fact"><b>4</b><span>정사면체 면</span></div>
+        <div class="fact f2"><b>6</b><span>정육면체 면</span></div>
+        <div class="fact f3"><b>8</b><span>정팔면체 면</span></div>
+        <div class="fact f4"><b>60°</b><span>모든 각의 크기</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5. 확장하기 -->
+  <section class="panel" id="expand">
+    <div class="card">
+      <h2>🚀 시어핀스키 피라미드에 도전!</h2>
+      <p class="lead">정사면체 <b>4개</b>를 모으면 두 배 큰 정사면체가 돼요(가운데가 뻥 뚫린 채로!). 이 과정을 계속 반복하면 아무리 확대해도 똑같은 모양이 나타나는 <b>프랙탈</b>, 바로 <b>시어핀스키 피라미드</b>가 만들어집니다.</p>
+    </div>
+    <div class="card">
+      <h2>🔺 단계별로 커지는 프랙탈</h2>
+      <p class="lead">버튼으로 단계를 바꾸고, 화면을 드래그해 돌려보세요. 작은 정사면체가 몇 개인지 세어볼까요?</p>
+      <canvas class="stage" id="cv3"></canvas>
+      <div class="btnrow">
+        <button class="pill b5 lvl" data-lvl="0">0단계</button>
+        <button class="pill b5 lvl" data-lvl="1">1단계</button>
+        <button class="pill b5 lvl" data-lvl="2">2단계</button>
+        <button class="pill b5 lvl" data-lvl="3">3단계</button>
+        <button class="pill b5 lvl" data-lvl="4">4단계</button>
+        <button class="pill b4" id="spin3">자동회전 ▶</button>
+      </div>
+      <div class="factbar">
+        <div class="fact"><b id="lvNum">0</b><span>단계</span></div>
+        <div class="fact f2"><b id="lvCount">1</b><span>작은 정사면체 수</span></div>
+        <div class="fact f3" id="ruleFact"><b id="lvRule">규칙</b><span id="ruleSub">🔎 눌러서 확인</span></div>
+      </div>
+      <div class="hint">💡 단계가 하나 올라갈 때마다 작은 정사면체 수가 <b>4배</b>로 늘어나요: 1 → 4 → 16 → 64 → 256 …</div>
+    </div>
+    <div class="card">
+      <h2>👐 반 전체가 함께 만들기</h2>
+      <p class="lead">혼자서는 어렵지만 친구들과 힘을 모으면 커다란 시어핀스키 피라미드를 만들 수 있어요!</p>
+      <div class="steps">
+        <div class="step"><div class="n">1</div><p>먼저 각자 작은 정사면체를 <b>여러 개</b> 만들어요. (앞의 '만들기' 전개도를 이용해요.)</p></div>
+        <div class="step"><div class="n">2</div><p>작은 것 <b>4개</b>를 아래 3개 + 위 1개로 붙여 <b>1단계</b> 피라미드를 만들어요.</p></div>
+        <div class="step"><div class="n">3</div><p>1단계 <b>4개</b>를 다시 같은 방법으로 붙이면 <b>2단계</b>(작은 것 16개)!</p></div>
+        <div class="step"><div class="n">4</div><p>2단계 <b>4개</b>를 모으면 <b>3단계</b>(작은 것 64개). 반 친구들과 함께라면 충분해요! 🎉</p></div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>📊 규칙을 찾아라 (눌러서 정답 확인)</h2>
+      <p class="lead">표의 빈칸을 예상해 본 뒤, 버튼을 눌러 맞혀보세요.</p>
+      <div class="steps" id="fracMiss"></div>
+      <div class="hint">🧠 더 생각해보기: 단계가 올라가도 작은 정사면체 <b>하나하나의 모양</b>은 변할까요? (힌트: 크기만 그대로, 개수만 4배씩!)</div>
+    </div>
+  </section>
+
+  <footer>정사면체 놀이수학 · 초등 고학년용 인터랙티브 학습 자료</footer>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+/* ===== 떠다니는 도형 배경 ===== */
+(function(){
+  const box=document.getElementById('float');
+  const marks=['🔺','🔷','🔸','⭐','🔻','🟣'];
+  for(let i=0;i<14;i++){
+    const s=document.createElement('span');
+    s.textContent=marks[i%marks.length];
+    s.style.left=(Math.random()*100)+'%';
+    s.style.fontSize=(18+Math.random()*22)+'px';
+    s.style.animationDuration=(12+Math.random()*16)+'s';
+    s.style.animationDelay=(-Math.random()*20)+'s';
+    box.appendChild(s);
+  }
+})();
+
+/* ===== 탭 전환 ===== */
+const tabs=document.querySelectorAll('.tab');
+const panels=document.querySelectorAll('.panel');
+tabs.forEach(t=>t.addEventListener('click',()=>{
+  tabs.forEach(x=>x.classList.remove('on'));
+  panels.forEach(x=>x.classList.remove('on'));
+  t.classList.add('on');
+  const p=document.getElementById(t.dataset.tab);
+  p.classList.add('on');
+  if(t.dataset.tab==='observe') resize1();
+  if(t.dataset.tab==='net') resize2();
+  if(t.dataset.tab==='expand') resize3();
+}));
+
+/* ===== 공통: 정사면체 면/색 (THREE 없이도 안전) ===== */
+const FACES=[[0,1,2],[0,1,3],[0,2,3],[1,2,3]];
+const FACECOLORS=[0x5b8def,0xff7aa2,0xffcf3f,0x4fd1a5];
+let V=null; // THREE 로드 후 initObserve에서 생성
+
+/* ====================================================== */
+/* 1) 돌려보기 씬                                          */
+/* ====================================================== */
+let sc1,cam1,rn1,grp1,faceMeshes=[],edgeObjs=[],vertObjs=[],spin=false;
+function initObserve(){
+  V=[
+    new THREE.Vector3( 1, 1, 1),
+    new THREE.Vector3( 1,-1,-1),
+    new THREE.Vector3(-1, 1,-1),
+    new THREE.Vector3(-1,-1, 1)
+  ];
+  const cv=document.getElementById('cv1');
+  rn1=new THREE.WebGLRenderer({canvas:cv,antialias:true,alpha:true});
+  rn1.setPixelRatio(Math.min(devicePixelRatio,2));
+  sc1=new THREE.Scene();
+  cam1=new THREE.PerspectiveCamera(45,1,0.1,100);
+  cam1.position.set(0,0,7);
+  sc1.add(new THREE.AmbientLight(0xffffff,0.75));
+  const dl=new THREE.DirectionalLight(0xffffff,0.8); dl.position.set(4,6,8); sc1.add(dl);
+  grp1=new THREE.Group(); sc1.add(grp1);
+
+  // 면 4개 (개별 메쉬)
+  FACES.forEach((f,i)=>{
+    const g=new THREE.BufferGeometry();
+    const p=new Float32Array([
+      V[f[0]].x,V[f[0]].y,V[f[0]].z,
+      V[f[1]].x,V[f[1]].y,V[f[1]].z,
+      V[f[2]].x,V[f[2]].y,V[f[2]].z]);
+    g.setAttribute('position',new THREE.BufferAttribute(p,3));
+    g.computeVertexNormals();
+    const m=new THREE.MeshLambertMaterial({color:FACECOLORS[i],transparent:true,opacity:0.92,
+      side:THREE.DoubleSide,emissive:0x000000});
+    const mesh=new THREE.Mesh(g,m); grp1.add(mesh); faceMeshes.push(mesh);
+  });
+  // 모서리 6개
+  const ePairs=[[0,1],[0,2],[0,3],[1,2],[1,3],[2,3]];
+  ePairs.forEach(pr=>{
+    const g=new THREE.CylinderGeometry(0.045,0.045,1,10);
+    const m=new THREE.MeshLambertMaterial({color:0x3a3560});
+    const cyl=new THREE.Mesh(g,m);
+    const a=V[pr[0]],b=V[pr[1]];
+    cyl.position.copy(a.clone().add(b).multiplyScalar(0.5));
+    cyl.scale.y=a.distanceTo(b);
+    cyl.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),b.clone().sub(a).normalize());
+    grp1.add(cyl); edgeObjs.push(cyl);
+  });
+  // 꼭짓점 4개
+  V.forEach(v=>{
+    const g=new THREE.SphereGeometry(0.14,18,18);
+    const m=new THREE.MeshLambertMaterial({color:0x2b2350});
+    const s=new THREE.Mesh(g,m); s.position.copy(v);
+    grp1.add(s); vertObjs.push(s);
+  });
+
+  grp1.rotation.set(0.5,0.7,0);
+  dragRotate(cv,grp1);
+  resize1();
+  (function loop(){requestAnimationFrame(loop);
+    if(spin) grp1.rotation.y+=0.012;
+    rn1.render(sc1,cam1);})();
+}
+function resize1(){
+  if(!rn1) return;
+  const cv=document.getElementById('cv1');
+  const w=cv.clientWidth,h=cv.clientHeight;
+  rn1.setSize(w,h,false); cam1.aspect=w/h; cam1.updateProjectionMatrix();
+}
+function highlight(mode){
+  if(!faceMeshes.length) return;
+  // reset
+  faceMeshes.forEach((m,i)=>{m.material.emissive.setHex(0x000000);m.material.emissiveIntensity=1;m.material.opacity=0.5;m.material.color.setHex(FACECOLORS[i]);});
+  edgeObjs.forEach(c=>{c.material.color.setHex(0x3a3560);c.scale.x=1;c.scale.z=1;});
+  vertObjs.forEach(s=>{s.material.color.setHex(0x2b2350);s.scale.setScalar(1);});
+  if(mode==='face'){faceMeshes.forEach((m,i)=>{m.material.emissive.setHex(FACECOLORS[i]);m.material.emissiveIntensity=0.4;m.material.opacity=1;});}
+  else{faceMeshes.forEach(m=>{m.material.opacity=0.92;});}
+  if(mode==='edge'){edgeObjs.forEach(c=>{c.material.color.setHex(0xff7aa2);c.scale.x=1.8;c.scale.z=1.8;});}
+  if(mode==='vertex'){vertObjs.forEach(s=>{s.material.color.setHex(0xffcf3f);s.scale.setScalar(1.7);});}
+}
+document.querySelectorAll('[data-show]').forEach(b=>b.addEventListener('click',()=>{
+  const mode=b.dataset.show;
+  if(mode==='reset'){highlight('none');grp1.rotation.set(0.5,0.7,0);spin=false;document.getElementById('spinBtn').textContent='자동회전 ▶';}
+  else highlight(mode);
+}));
+document.getElementById('spinBtn').addEventListener('click',function(){
+  spin=!spin; this.textContent=spin?'자동회전 ⏸':'자동회전 ▶';
+});
+
+/* 드래그 회전 (공용) */
+function dragRotate(cv,target){
+  let down=false,px=0,py=0;
+  const start=e=>{down=true;const t=e.touches?e.touches[0]:e;px=t.clientX;py=t.clientY;};
+  const move=e=>{if(!down)return;const t=e.touches?e.touches[0]:e;
+    target.rotation.y+=(t.clientX-px)*0.01;target.rotation.x+=(t.clientY-py)*0.01;
+    px=t.clientX;py=t.clientY;e.preventDefault();};
+  const end=()=>down=false;
+  cv.addEventListener('mousedown',start);window.addEventListener('mousemove',move);window.addEventListener('mouseup',end);
+  cv.addEventListener('touchstart',start,{passive:false});cv.addEventListener('touchmove',move,{passive:false});cv.addEventListener('touchend',end);
+}
+
+/* ====================================================== */
+/* 2) 전개도 접기 씬                                        */
+/* ====================================================== */
+let sc2,cam2,rn2,grp2,hinges=[],foldTarget=0,foldNow=0,autoFoldOn=false;
+const FOLD_MAX=Math.acos(-1/3); // 약 109.47°
+function initNet(){
+  const cv=document.getElementById('cv2');
+  rn2=new THREE.WebGLRenderer({canvas:cv,antialias:true,alpha:true});
+  rn2.setPixelRatio(Math.min(devicePixelRatio,2));
+  sc2=new THREE.Scene();
+  cam2=new THREE.PerspectiveCamera(45,1,0.1,100);
+  cam2.position.set(0,3.2,6.2); cam2.lookAt(0,0,0);
+  sc2.add(new THREE.AmbientLight(0xffffff,0.8));
+  const dl=new THREE.DirectionalLight(0xffffff,0.75); dl.position.set(3,7,5); sc2.add(dl);
+  grp2=new THREE.Group(); sc2.add(grp2);
+
+  // 밑면 정삼각형 (XZ 평면, y=0), 한 변 = 2
+  const s=2, R=s/Math.sqrt(3);
+  const base=[
+    new THREE.Vector3(R*Math.cos(Math.PI/2),0,R*Math.sin(Math.PI/2)),        // 위
+    new THREE.Vector3(R*Math.cos(Math.PI*7/6),0,R*Math.sin(Math.PI*7/6)),   // 왼아래
+    new THREE.Vector3(R*Math.cos(Math.PI*11/6),0,R*Math.sin(Math.PI*11/6))  // 오른아래
+  ];
+  grp2.add(triMesh(base[0],base[1],base[2],0xffcf3f));
+
+  // 세 변에 붙는 날개
+  const edges=[[1,2],[2,0],[0,1]];
+  const flapColors=[0x5b8def,0xff7aa2,0x4fd1a5];
+  edges.forEach((e,i)=>{
+    const a=base[e[0]], b=base[e[1]];
+    const mid=a.clone().add(b).multiplyScalar(0.5);
+    const axis=b.clone().sub(a).normalize();
+    // 평평할 때 날개 꼭짓점 = 반대편 밑면 꼭짓점을 변 기준으로 반사
+    const opp=base[3-e[0]-e[1]];
+    const apexFlat=opp.clone().sub(mid);
+    const along=apexFlat.dot(axis);
+    const perp=apexFlat.clone().sub(axis.clone().multiplyScalar(along)); // mid→opp 수직성분
+    const apexReflect=mid.clone().add(axis.clone().multiplyScalar(along)).sub(perp);
+    // 힌지 그룹 (mid 기준 회전)
+    const hinge=new THREE.Group(); hinge.position.copy(mid); grp2.add(hinge);
+    const la=a.clone().sub(mid), lb=b.clone().sub(mid), lap=apexReflect.clone().sub(mid);
+    hinge.add(triMesh(la,lb,lap,flapColors[i]));
+    hinge.userData={axis:axis.clone()};
+    hinges.push(hinge);
+  });
+  resize2(); applyFold(0);
+  (function loop(){requestAnimationFrame(loop);
+    if(autoFoldOn){foldTarget+=0.012; if(foldTarget>=1){foldTarget=1;autoFoldOn=false;}
+      document.getElementById('foldRange').value=Math.round(foldTarget*100);}
+    foldNow+=(foldTarget-foldNow)*0.15;
+    applyFold(foldNow);
+    grp2.rotation.y+=0.0016;
+    rn2.render(sc2,cam2);})();
+}
+function triMesh(p1,p2,p3,color){
+  const g=new THREE.BufferGeometry();
+  g.setAttribute('position',new THREE.BufferAttribute(new Float32Array([
+    p1.x,p1.y,p1.z, p2.x,p2.y,p2.z, p3.x,p3.y,p3.z]),3));
+  g.computeVertexNormals();
+  const grp=new THREE.Group();
+  const m=new THREE.MeshLambertMaterial({color:color,side:THREE.DoubleSide,transparent:true,opacity:0.95});
+  grp.add(new THREE.Mesh(g,m));
+  // 테두리
+  const eg=new THREE.BufferGeometry();
+  eg.setAttribute('position',new THREE.BufferAttribute(new Float32Array([
+    p1.x,p1.y,p1.z, p2.x,p2.y,p2.z, p2.x,p2.y,p2.z, p3.x,p3.y,p3.z, p3.x,p3.y,p3.z, p1.x,p1.y,p1.z]),3));
+  grp.add(new THREE.LineSegments(eg,new THREE.LineBasicMaterial({color:0x2b2350})));
+  return grp;
+}
+function applyFold(t){
+  const ang=t*FOLD_MAX;
+  hinges.forEach(h=>{
+    h.quaternion.setFromAxisAngle(h.userData.axis,ang);
+  });
+}
+function resize2(){
+  if(!rn2) return;
+  const cv=document.getElementById('cv2');
+  const w=cv.clientWidth,h=cv.clientHeight;
+  rn2.setSize(w,h,false); cam2.aspect=w/h; cam2.updateProjectionMatrix();
+}
+document.getElementById('foldRange').addEventListener('input',e=>{
+  autoFoldOn=false; foldTarget=e.target.value/100;
+});
+document.getElementById('autoFold').addEventListener('click',()=>{
+  foldTarget=0; foldNow=0; autoFoldOn=true;
+});
+
+/* ===== 전개도 고르기 게임 ===== */
+// 각 후보를 삼각형 3점 좌표로 그려 서로 겹치지 않게 표현.
+const NETS=[
+  // 가: 큰 삼각형 (정삼각형 4개, 정답)
+  {ok:true,  label:'가', tris:[
+    [[75,15],[55,50],[95,50]], [[35,85],[75,85],[55,50]],
+    [[115,85],[95,50],[75,85]], [[55,50],[95,50],[75,85]] ]},
+  // 나: 한 줄에 4개, 꼭짓점만 닿음 (모서리를 공유하지 않음 → 안됨)
+  {ok:false, label:'나', tris:[
+    [[8,85],[40,85],[24,57]], [[40,85],[72,85],[56,57]],
+    [[72,85],[104,85],[88,57]], [[104,85],[136,85],[120,57]] ]},
+  // 다: 지그재그 띠 모양 (정답)
+  {ok:true,  label:'다', tris:[
+    [[12,85],[44,85],[28,57]], [[44,85],[28,57],[60,57]],
+    [[44,85],[76,85],[60,57]], [[76,85],[60,57],[92,57]] ]},
+  // 라: 한 점에 4개가 모인 부채꼴 (한 꼭짓점엔 3개만 → 안됨)
+  {ok:false, label:'라', tris:[
+    [[75,30],[111,9],[111,51]], [[75,30],[111,51],[75,72]],
+    [[75,30],[75,72],[39,51]], [[75,30],[39,51],[39,9]] ]}
+];
+function netSVG(spec){
+  let paths='';
+  spec.tris.forEach(t=>{
+    const d=`M${t[0][0]} ${t[0][1]} L${t[1][0]} ${t[1][1]} L${t[2][0]} ${t[2][1]} Z`;
+    paths+=`<path d="${d}" fill="#cfe0ff" stroke="#5b8def" stroke-width="2" stroke-linejoin="round"/>`;
+  });
+  return `<svg viewBox="0 0 150 100">${paths}</svg>`;
+}
+(function buildNets(){
+  const grid=document.getElementById('netgrid');
+  NETS.forEach((n,i)=>{
+    const d=document.createElement('div');
+    d.className='netpick'; d.innerHTML=netSVG(n)+`<div class="lab">${n.label}</div>`;
+    d.addEventListener('click',()=>{
+      const fb=document.getElementById('netfeed');
+      if(n.ok){d.classList.add('ok');fb.textContent='🎉 정답! 접으면 정사면체가 돼요.';fb.style.color='#2fa985';}
+      else{d.classList.add('no');fb.textContent='🙈 이건 접어도 정사면체가 안 돼요. 다시!';fb.style.color='#e35d84';
+        setTimeout(()=>d.classList.remove('no'),700);}
+    });
+    grid.appendChild(d);
+  });
+})();
+
+/* ====================================================== */
+/* 3) 퀴즈                                                  */
+/* ====================================================== */
+const QUIZ=[
+  {q:'정사면체의 면은 모두 몇 개일까요?',o:['3개','4개','5개','6개'],a:1,tip:'면 4개! 그래서 이름도 정사(4)면체예요.'},
+  {q:'정사면체의 각 면은 어떤 도형일까요?',o:['정사각형','직사각형','정삼각형','원'],a:2,tip:'모든 면이 똑같은 정삼각형이에요.'},
+  {q:'정사면체의 모서리(변)는 몇 개일까요?',o:['4개','5개','6개','8개'],a:2,tip:'모서리는 6개랍니다.'},
+  {q:'정사면체의 꼭짓점은 몇 개일까요?',o:['3개','4개','6개','8개'],a:1,tip:'꼭짓점은 4개!'},
+  {q:'한 꼭짓점에는 몇 개의 면이 모일까요?',o:['2개','3개','4개','5개'],a:1,tip:'한 점에 정삼각형 3개가 모여요.'},
+  {q:'정삼각형 한 각의 크기는 몇 도일까요?',o:['45°','60°','90°','120°'],a:1,tip:'정삼각형의 세 각은 모두 60°!'}
+];
+let qi=0,score=0,answered=false;
+function loadQ(){
+  answered=false;
+  const cur=QUIZ[qi];
+  document.getElementById('qnum').textContent=(qi+1)+' / '+QUIZ.length;
+  document.getElementById('qtext').textContent=cur.q;
+  document.getElementById('qbar').style.width=((qi)/QUIZ.length*100)+'%';
+  document.getElementById('qfeed').textContent='';
+  document.getElementById('qnav').style.display='none';
+  const box=document.getElementById('qopts'); box.innerHTML='';
+  cur.o.forEach((opt,idx)=>{
+    const b=document.createElement('button');
+    b.className='opt'; b.textContent=opt;
+    b.addEventListener('click',()=>pick(idx,b));
+    box.appendChild(b);
+  });
+}
+function pick(idx,btn){
+  if(answered) return; answered=true;
+  const cur=QUIZ[qi];
+  const btns=document.querySelectorAll('#qopts .opt');
+  btns.forEach((b,i)=>{b.disabled=true; if(i===cur.a)b.classList.add('correct');});
+  const fb=document.getElementById('qfeed');
+  if(idx===cur.a){score++;fb.textContent='⭐ 정답! '+cur.tip;fb.style.color='#2fa985';}
+  else{btn.classList.add('wrong');fb.textContent='❌ 아쉬워요. '+cur.tip;fb.style.color='#e35d84';}
+  document.getElementById('score').textContent='⭐ '+score+'점';
+  document.getElementById('qbar').style.width=((qi+1)/QUIZ.length*100)+'%';
+  const nav=document.getElementById('qnav');
+  nav.style.display='flex';
+  document.getElementById('nextBtn').textContent=(qi===QUIZ.length-1)?'결과 보기 🏁':'다음 문제 ➡';
+}
+document.getElementById('nextBtn').addEventListener('click',()=>{
+  if(qi<QUIZ.length-1){qi++;loadQ();}
+  else{
+    const box=document.getElementById('qopts'); box.innerHTML='';
+    document.getElementById('qtext').textContent=(score===QUIZ.length?'🏆 만점이에요! 정사면체 박사님!':'잘했어요! 다시 도전해볼까요?');
+    document.getElementById('qfeed').textContent='총 '+score+' / '+QUIZ.length+' 점';
+    document.getElementById('qfeed').style.color='#5b57a0';
+    const nav=document.getElementById('qnav'); nav.style.display='flex';
+    document.getElementById('nextBtn').textContent='🔄 다시 풀기';
+    document.getElementById('nextBtn').onclick=()=>{qi=0;score=0;document.getElementById('score').textContent='⭐ 0점';document.getElementById('nextBtn').onclick=null;
+      document.getElementById('nextBtn').addEventListener;loadQ();location.hash='';};
+  }
+});
+
+/* ====================================================== */
+/* 4) 만들기 탐구 미션                                      */
+/* ====================================================== */
+const MISS=[
+  {q:'① 정사면체를 바닥에 놓고 위에서 보면 꼭짓점 몇 개가 보일까요?',a:'위에서 보면 삼각형 안에 점 하나! 바닥 3개 + 꼭대기 1개 = 모두 4개예요.'},
+  {q:'② 한 꼭짓점에서 뻗어나가는 모서리는 몇 개일까요?',a:'3개! 모든 꼭짓점이 똑같이 3개의 모서리와 이어져 있어요.'},
+  {q:'③ 정사면체에 있는 각(모서리 사이 각)은 모두 몇 개이고 몇 도일까요?',a:'면 4개 × 각 3개 = 12개, 전부 60°랍니다.'},
+  {q:'④ 바닥면을 바꿔 굴려도 모양이 똑같을까요?',a:'네! 어느 면을 바닥에 놓아도 완전히 같은 모양이에요. 그래서 아주 안정적이죠.'}
+];
+(function buildMiss(){
+  const box=document.getElementById('missions');
+  MISS.forEach((m,i)=>{
+    const d=document.createElement('div'); d.className='step reveal';
+    d.innerHTML=`<div class="n">🔎</div><div><p>${m.q}</p>
+      <div class="btnrow" style="justify-content:flex-start;margin-top:8px;">
+      <button class="pill ghost">정답 확인</button></div>
+      <div class="ans">💡 ${m.a}</div></div>`;
+    d.querySelector('button').addEventListener('click',()=>d.classList.toggle('open'));
+    box.appendChild(d);
+  });
+})();
+
+/* ====================================================== */
+/* 5) 확장하기: 시어핀스키 피라미드                          */
+/* ====================================================== */
+let sc3,cam3,rn3,grp3,spin3=false,curLvl=0;
+const S_COUNTS=[1,4,16,64,256], S_RULE=['4⁰=1','4¹=4','4²=16','4³=64','4⁴=256'];
+const S_COLORS=[0xa06bff,0x5b8def,0xff7aa2,0x4fd1a5,0xffcf3f];
+function initSierpinski(){
+  const cv=document.getElementById('cv3');
+  rn3=new THREE.WebGLRenderer({canvas:cv,antialias:true,alpha:true});
+  rn3.setPixelRatio(Math.min(devicePixelRatio,2));
+  sc3=new THREE.Scene();
+  cam3=new THREE.PerspectiveCamera(45,1,0.1,100);
+  cam3.position.set(0,1.5,10.5);
+  cam3.lookAt(0,0,0);
+  sc3.add(new THREE.AmbientLight(0xffffff,0.82));
+  const dl=new THREE.DirectionalLight(0xffffff,0.72); dl.position.set(4,7,6); sc3.add(dl);
+  grp3=new THREE.Group(); sc3.add(grp3);
+  buildFractal(0);
+  dragRotate(cv,grp3);
+  grp3.rotation.set(0.12,0.5,0);
+  resize3();
+  (function loop(){requestAnimationFrame(loop);
+    if(spin3) grp3.rotation.y+=0.01;
+    rn3.render(sc3,cam3);})();
+}
+function baseTetra(){
+  const R=1.1547, k=3.0; // 길이 2배 (기존 1.5 → 3.0)
+  const p=[
+    new THREE.Vector3(0,0,R).multiplyScalar(k),
+    new THREE.Vector3(-1,0,-0.5774).multiplyScalar(k),
+    new THREE.Vector3(1,0,-0.5774).multiplyScalar(k),
+    new THREE.Vector3(0,1.633,0).multiplyScalar(k)
+  ];
+  const off=1.633*k/4; // 무게중심을 원점에 맞춰 가운데 정렬
+  p.forEach(v=>v.y-=off);
+  return p;
+}
+function subdivide(t,level,out){
+  if(level===0){out.push(t);return;}
+  const m=(a,b)=>a.clone().add(b).multiplyScalar(0.5);
+  const [a,b,c,d]=t;
+  subdivide([a,m(a,b),m(a,c),m(a,d)],level-1,out);
+  subdivide([m(a,b),b,m(b,c),m(b,d)],level-1,out);
+  subdivide([m(a,c),m(b,c),c,m(c,d)],level-1,out);
+  subdivide([m(a,d),m(b,d),m(c,d),d],level-1,out);
+}
+function disposeGroup(g){
+  while(g.children.length){
+    const c=g.children[0];
+    if(c.geometry) c.geometry.dispose();
+    if(c.material) c.material.dispose();
+    g.remove(c);
+  }
+}
+function buildFractal(level){
+  curLvl=level;
+  disposeGroup(grp3);
+  const out=[]; subdivide(baseTetra(),level,out);
+  // 많은 작은 정사면체를 하나의 도형으로 합쳐 그림 (256개도 가볍게)
+  const f=[[0,1,2],[0,1,3],[0,2,3],[1,2,3]];
+  const pos=[],col=[],c=new THREE.Color();
+  out.forEach((t,i)=>{
+    c.setHex(S_COLORS[i%S_COLORS.length]);
+    f.forEach(fc=>fc.forEach(idx=>{
+      pos.push(t[idx].x,t[idx].y,t[idx].z); col.push(c.r,c.g,c.b);
+    }));
+  });
+  const g=new THREE.BufferGeometry();
+  g.setAttribute('position',new THREE.BufferAttribute(new Float32Array(pos),3));
+  g.setAttribute('color',new THREE.BufferAttribute(new Float32Array(col),3));
+  g.computeVertexNormals();
+  grp3.add(new THREE.Mesh(g,new THREE.MeshLambertMaterial({vertexColors:true,side:THREE.DoubleSide})));
+  // 모서리 선: 조각이 너무 많으면 지저분하고 느려서 3단계까지만 표시
+  if(level<=3){
+    const eIdx=[0,1,1,2,2,0,0,3,1,3,2,3], ep=[];
+    out.forEach(t=>eIdx.forEach(idx=>ep.push(t[idx].x,t[idx].y,t[idx].z)));
+    const eg=new THREE.BufferGeometry();
+    eg.setAttribute('position',new THREE.BufferAttribute(new Float32Array(ep),3));
+    grp3.add(new THREE.LineSegments(eg,new THREE.LineBasicMaterial({color:0x2b2350,transparent:true,opacity:0.3})));
+  }
+  revealRule(level);
+}
+// 단계 정보 갱신 (3D 없이도 동작)
+function revealRule(level){
+  const num=document.getElementById('lvNum'); if(!num) return;
+  curLvl=level;
+  num.textContent=level;
+  document.getElementById('lvCount').textContent=S_COUNTS[level];
+  // 규칙 타일은 '규칙'만 표시하고 눌러야 나오도록 숨김 상태로
+  hideRuleFact();
+  document.querySelectorAll('.lvl').forEach(b=>b.classList.toggle('on',+b.dataset.lvl===level));
+}
+function hideRuleFact(){
+  const rf=document.getElementById('lvRule'), rs=document.getElementById('ruleSub'), box=document.getElementById('ruleFact');
+  if(rf) rf.textContent='규칙';
+  if(rs) rs.textContent='🔎 눌러서 확인';
+  if(box) box.classList.remove('shown');
+}
+(function ruleFactClick(){
+  const box=document.getElementById('ruleFact'); if(!box) return;
+  box.addEventListener('click',()=>{
+    document.getElementById('lvRule').textContent=S_RULE[curLvl];
+    document.getElementById('ruleSub').textContent='규칙(4의 거듭제곱)';
+    box.classList.add('shown');
+  });
+})();
+function resize3(){
+  if(!rn3) return;
+  const cv=document.getElementById('cv3');
+  const w=cv.clientWidth,h=cv.clientHeight;
+  rn3.setSize(w,h,false); cam3.aspect=w/h; cam3.updateProjectionMatrix();
+}
+document.querySelectorAll('.lvl').forEach(b=>b.addEventListener('click',()=>{
+  const L=+b.dataset.lvl;
+  if(grp3) buildFractal(L); else revealRule(L); // 3D가 없어도 규칙은 나타남
+}));
+document.getElementById('spin3').addEventListener('click',function(){
+  spin3=!spin3; this.textContent=spin3?'자동회전 ⏸':'자동회전 ▶';
+});
+
+/* 확장 규칙 찾기 미션 */
+const FMISS=[
+  {q:'① 1단계 피라미드에는 작은 정사면체가 몇 개일까요?',a:'4개! (0단계 1개 × 4)'},
+  {q:'② 2단계에는 몇 개일까요?',a:'16개! 4 × 4 = 16 (4²)'},
+  {q:'③ 3단계에는 몇 개일까요?',a:'64개! 16 × 4 = 64 (4³)'},
+  {q:'④ 그럼 4단계라면 몇 개가 필요할까요?',a:'256개! 64 × 4 = 256 (4⁴). 단계마다 4배씩 늘어나요.'}
+];
+(function buildFMiss(){
+  const box=document.getElementById('fracMiss'); if(!box)return;
+  FMISS.forEach(m=>{
+    const d=document.createElement('div'); d.className='step reveal';
+    d.innerHTML=`<div class="n">🧮</div><div><p>${m.q}</p>
+      <div class="btnrow" style="justify-content:flex-start;margin-top:8px;">
+      <button class="pill ghost">정답 확인</button></div>
+      <div class="ans">💡 ${m.a}</div></div>`;
+    d.querySelector('button').addEventListener('click',()=>d.classList.toggle('open'));
+    box.appendChild(d);
+  });
+})();
+
+/* ===== 초기화 (하나가 실패해도 나머지는 동작) ===== */
+function safe(fn,name){try{fn();}catch(e){console.warn(name+' 실패:',e);}}
+function noThreeNotice(){
+  if(typeof THREE!=='undefined') return;
+  ['cv1','cv2','cv3'].forEach(id=>{
+    const cv=document.getElementById(id); if(!cv)return;
+    const box=document.createElement('div');
+    box.style.cssText='height:360px;display:flex;align-items:center;justify-content:center;text-align:center;'+
+      'padding:20px;color:#6a6790;font-weight:700;background:linear-gradient(180deg,#f3f7ff,#eef1ff);border-radius:18px;';
+    box.innerHTML='🔺 3D 화면을 보려면 인터넷 연결이 필요해요.<br>연결 후 새로고침하면 정사면체가 나타납니다!';
+    cv.replaceWith(box);
+  });
+}
+window.addEventListener('load',()=>{
+  loadQ();                 // 퀴즈는 항상 준비
+  noThreeNotice();
+  safe(initObserve,'돌려보기');
+  safe(initNet,'전개도');
+  safe(initSierpinski,'확장하기');
+  revealRule(0); // 규칙 창 초기 표시 (3D 실패 시에도)
+});
+window.addEventListener('resize',()=>{resize1();resize2();resize3();});
+</script>
+</body>
+</html>
